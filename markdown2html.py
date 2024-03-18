@@ -3,6 +3,7 @@
 
 import sys
 import os
+import re
 
 def check_incoming_data():
     """ Check incoming data """
@@ -26,6 +27,10 @@ if __name__ == "__main__":
     ordered_list_mode = 0
     unordered_list_mode = 0
     p_mode = 0
+    patterns = {
+        r"\*\*(.*?)\*\*": 'b',
+        r"__(.*?)__": 'em'
+    }
     elements = {
       '#': 'h1',
       '##': 'h2',
@@ -46,6 +51,7 @@ if __name__ == "__main__":
             if line_trimmed:
                 tokens = line_trimmed.split(' ')
                 length = len(tokens)
+
                 for index, token in enumerate(tokens):
                     if token in elements:
                         p_mode = 0
@@ -72,10 +78,27 @@ if __name__ == "__main__":
                             else:
                                 queue.append('<br />')
 
-                        if index == length - 1:
-                            queue.append(f"{token}")
-                        else:
-                            queue.append(f"{token} ")
+                        matched = 0
+                        print(token)
+                        for pattern, tag in patterns.items():
+                            match = re.search(pattern, token)
+                            if (match):
+                                print(token)
+                                match_start = match.start()
+                                match_end = match.end()
+                                matched_text = match.group(1)
+                                queue.append(token[:match_start])
+                                queue.append(f"<{tag}>")
+                                queue.append(matched_text)
+                                queue.append(f"</{tag}>")
+                                queue.append(token[match_end:])
+                                matched = 1
+
+                        if matched == 0:
+                            if index == length - 1:
+                                queue.append(f"{token}")
+                            else:
+                                queue.append(f"{token} ")
                 while stack:
                     current = stack[-1]
                     if (unordered_list_mode == 1 and current == '</ul>')\
