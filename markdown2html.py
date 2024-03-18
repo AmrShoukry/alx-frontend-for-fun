@@ -23,7 +23,9 @@ if __name__ == "__main__":
     queue = []
     stack = []
     lines = ""
-    list_mode = 0
+    ordered_list_mode = 0
+    unordered_list_mode = 0
+    p_mode = 0
     elements = {
       '#': 'h1',
       '##': 'h2',
@@ -31,40 +33,62 @@ if __name__ == "__main__":
       '####': 'h4',
       '#####': 'h5',
       '######': 'h6',
-      '-': 'li'
+      '-': 'li',
+      '*': 'li'
     }
 
     with open(read_file, 'r') as file:
         for line in file:
             line_trimmed = line.strip()
+            if not line_trimmed:
+                p_mode = 0
+                queue.append(stack.pop())
             if line_trimmed:
                 tokens = line_trimmed.split(' ')
                 length = len(tokens)
                 for index, token in enumerate(tokens):
                     if token in elements:
+                        p_mode = 0
                         if token != '-':
-                            list_mode = 0
-                        if token == '-' and list_mode == 0:
+                            unordered_list_mode = 0
+                        if token == '-' and unordered_list_mode == 0:
                             queue.append('<ul>')
                             stack.append('</ul>')
-                            list_mode = 1
+                            unordered_list_mode = 1
+                        if token != '*':
+                            ordered_list_mode = 0
+                        if token == '*' and ordered_list_mode == 0:
+                            queue.append('<ol>')
+                            stack.append('</ol>')
+                            ordered_list_mode = 1
                         queue.append(f"<{elements[token]}>")
                         stack.append(f"</{elements[token]}>")
                     else:
+                        if index == 0:
+                            if p_mode == 0:
+                                queue.append('<p>')
+                                stack.append('</p>')
+                                p_mode = 1
+                            else:
+                                queue.append('<br />')
+
                         if index == length - 1:
                             queue.append(f"{token}")
                         else:
                             queue.append(f"{token} ")
                 while stack:
                     current = stack[-1]
-                    if list_mode == 1 and current == '</ul>':
+                    if (unordered_list_mode == 1 and current == '</ul>')\
+                      or (ordered_list_mode == 1 and current == '</ol>')\
+                          or (p_mode == 1 and current == '</p>'):
                         break
                     queue.append(stack.pop())
-                queue.append("\n")
                 lines += "".join(queue)
                 queue = []
     while stack:
         lines += stack.pop()
+    while queue:
+        lines += queue.pop(0)
 
     lines = lines.strip()
 
